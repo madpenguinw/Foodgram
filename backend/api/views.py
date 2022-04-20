@@ -86,15 +86,15 @@ class RecipesViewSet(viewsets.ModelViewSet):
         ingredients = ingredients.filter(
             recipe__shopping_cart_recipe__user=request.user)
         ingredients = ingredients.values(
-                'ingredient__name', 'ingredient__measurement_unit', 'amount')
-        ingredients = ingredients.order_by('ingredient__name')
+                'ingredient__name', 'ingredient__measurement_unit')
         ingredients = ingredients.annotate(ingredient_total=Sum('amount'))
+        ingredients = ingredients.order_by('ingredient__name')
         ingredients_to_buy = 'Список покупок: \n'
         for ingredient in ingredients:
             ingredients_to_buy += (
                 f'{ingredient["ingredient__name"]} '
                 f'({ingredient["ingredient__measurement_unit"]}) - '
-                f'{ingredient["amount"]} \n'
+                f'{ingredient["ingredient_total"]} \n'
             )
         response = HttpResponse(
             ingredients_to_buy,

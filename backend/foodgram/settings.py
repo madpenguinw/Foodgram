@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'recipes',
     'users',
     'djoser',
-    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
