@@ -1,3 +1,5 @@
+import django.contrib.auth.password_validation as validators
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from .models import Follow, User
@@ -20,10 +22,11 @@ class CustomUsersSerializer(serializers.ModelSerializer):
         lookup_field = 'username'
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user.id
-        return Follow.objects.filter(
-            user=user,
-            author=obj).exists()
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        user = request.user
+        return Follow.objects.filter(user=user, author=obj).exists()
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -63,3 +66,22 @@ class FollowSerializer(serializers.ModelSerializer):
 
         def get_recipes_count(self, obj):
             return obj.recipes.count()
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(
+        label='Текущий пароль')
+    new_password = serializers.CharField(
+        label='Новый пароль')
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        password = make_password(
+            validated_data.get('new_password'))
+        user.password = password
+        user.save()
+        return validated_data
+
+    def validate_new_password(self, new_password):
+        validators.validate_password(new_password)
+        return new_password

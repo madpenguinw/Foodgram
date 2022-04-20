@@ -7,13 +7,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from recipes.models import (Favorite, Ingredient, IngredientsQuantity, Recipe,
+from recipes.models import (Favorite, Ingredient, IngredientsAmount, Recipe,
                             ShoppingCart, Tag)
 from users.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 
 from .pagination import PagePagination
-from .serializers import (IngredientsSerializer, RecipeSerializer,
-                          RecipeShortSerializer, TagSerializer)
+from .serializers import (IngredientsSerializer, RecipeCreateSerializer,
+                          RecipeGetSerializer, RecipeShortSerializer,
+                          TagSerializer)
 
 
 class TagsViewSet(ReadOnlyModelViewSet):
@@ -32,14 +33,18 @@ class IngredientsViewSet(ReadOnlyModelViewSet):
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
     permission_classes = [IsOwnerOrReadOnly]
     pagination_class = PagePagination
     filter_backends = (filters.SearchFilter,)
     filterset_fields = (
         'author',
-        'tag',
+        'tags',
     )
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return RecipeGetSerializer
+        return RecipeCreateSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -74,18 +79,18 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        ingredients = IngredientsQuantity.objects.filter(
+        ingredients = IngredientsAmount.objects.filter(
             recipe__is_in_shopping_cart=request.user).values(
-                'ingredient__name', 'ingredient__unit'
+                'ingredient__name', 'ingredient__measurement_unit'
             ).order_by(
                 'ingredient__name'
-            ).annotate(ingredient_total=Sum('quantity'))
+            ).annotate(ingredient_total=Sum('amount'))
         ingredients_to_buy = 'Список покупок: \n'
         for ingredient in ingredients:
             ingredients_to_buy += (
                 f'{ingredient["ingredient"]} '
-                f'({ingredient["unit"]}) - '
-                f'{ingredient["quantity"]} \n'
+                f'({ingredient["measurement_unit"]}) - '
+                f'{ingredient["amount"]} \n'
             )
         response = HttpResponse(
             ingredients_to_buy,

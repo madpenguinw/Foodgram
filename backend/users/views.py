@@ -1,16 +1,18 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from djoser.views import UserViewSet
+from rest_framework import status
+from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.pagination import PagePagination
 
 from .models import Follow, User
-from .serializers import CustomUsersSerializer, FollowSerializer
+from .serializers import (CustomUsersSerializer, FollowSerializer,
+                          SetPasswordSerializer)
 
 
-class UsersViewSet(viewsets.ModelViewSet):
+class UsersViewSet(UserViewSet):
     serializer_class = CustomUsersSerializer
     pagination_class = PagePagination
     queryset = User.objects.all()
@@ -48,3 +50,18 @@ class UsersViewSet(viewsets.ModelViewSet):
                 author=author
             ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+def set_password(request):
+    serializer = SetPasswordSerializer(
+        data=request.data,
+        context={'request': request})
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'message': 'Пароль успешно изменен'},
+            status=status.HTTP_201_CREATED)
+    return Response(
+        {'error': 'Введенные данные некорректны'},
+        status=status.HTTP_400_BAD_REQUEST)

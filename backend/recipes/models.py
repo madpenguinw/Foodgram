@@ -9,7 +9,7 @@ class Ingredient(models.Model):
         max_length=200,
         db_index=True
     )
-    units = models.TextField(
+    measurement_unit = models.TextField(
         verbose_name='Единицы измерения',
         max_length=255,
         null=True,
@@ -87,13 +87,11 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         verbose_name='Ингридиенты',
-        through='IngredientsQuantity',
-        related_name='recipes',
+        through='IngredientsAmount'
     )
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
-        verbose_name='Тэг',
-        related_name='recipes',
+        verbose_name='Тэг'
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления в минутах'
@@ -118,20 +116,20 @@ class Recipe(models.Model):
         return self.name
 
 
-class IngredientsQuantity(models.Model):
-    ingredients = models.ForeignKey(
+class IngredientsAmount(models.Model):
+    ingredient = models.ForeignKey(
         Ingredient,
         verbose_name='Ингридиент',
-        related_name='ingredient_in_recipe',
+        related_name='amount_of_ingredients',
         on_delete=models.CASCADE
     )
     recipe = models.ForeignKey(
         Recipe,
         verbose_name='Рецепт',
-        related_name='ingredient_in_recipe',
+        related_name='recipe_ingredients',
         on_delete=models.CASCADE
     )
-    quantity = models.PositiveIntegerField(
+    amount = models.PositiveIntegerField(
         verbose_name='Количество'
     )
 
@@ -141,12 +139,12 @@ class IngredientsQuantity(models.Model):
         verbose_name_plural = 'Количество ингридиентов'
         constraints = [
             models.UniqueConstraint(
-                fields=['ingredients', 'recipe'],
+                fields=['ingredient', 'recipe'],
                 name='unique_ingredient_in_recipe'
             )]
 
     def __str__(self):
-        return f'{self.recipe} {self.ingredients} {self.quantity} '
+        return f'{self.recipe} {self.ingredient} {self.amount} '
 
 
 class Favorite(models.Model):
@@ -154,12 +152,13 @@ class Favorite(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
+        related_name='user_favorite',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='favorites',
+        related_name='recipe_favorite',
     )
 
     class Meta:
