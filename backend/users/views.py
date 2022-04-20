@@ -17,6 +17,11 @@ class UsersViewSet(UserViewSet):
     pagination_class = PagePagination
     queryset = User.objects.all()
 
+    def get_serializer_class(self):
+        if self.action == 'subscribe':
+            return FollowSerializer
+        return super().get_serializer_class()
+
     @action(
         detail=False, methods=['GET'], permission_classes=(IsAuthenticated,)
     )
@@ -35,11 +40,11 @@ class UsersViewSet(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=True, methods=['GET', 'DELETE'],
+    @action(detail=True, methods=['POST', 'DELETE'],
             permission_classes=[IsAuthenticated])
-    def subscribe(request, username):
-        author = get_object_or_404(User, username=username)
-        if request.method == 'GET':
+    def subscribe(self, request, id=None):
+        author = get_object_or_404(User, id=id)
+        if request.method == 'POST':
             serializer = FollowSerializer(
                 Follow.objects.create(user=request.user, author=author),
                 context={'request': request})

@@ -49,11 +49,11 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['GET', 'DELETE'],
+    @action(detail=True, methods=['POST', 'DELETE'],
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        if request.method == 'GET':
+        if request.method == 'POST':
             serializer = RecipeShortSerializer(recipe)
             Favorite.objects.create(user=self.request.user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -63,11 +63,11 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['GET', 'DELETE'],
+    @action(detail=True, methods=['POST', 'DELETE'],
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        if request.method == 'GET':
+        if request.method == 'POST':
             serializer = RecipeShortSerializer(recipe)
             ShoppingCart.objects.create(user=self.request.user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -79,17 +79,21 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        ingredients = IngredientsAmount.objects.filter(
-            recipe__is_in_shopping_cart=request.user).values(
-                'ingredient__name', 'ingredient__measurement_unit'
-            ).order_by(
-                'ingredient__name'
-            ).annotate(ingredient_total=Sum('amount'))
+        ingredients = IngredientsAmount.objects.select_related(
+            'recipe',
+            'ingredient'
+        )
+        ingredients = ingredients.filter(
+            recipe__shopping_cart_recipe__user=request.user)
+        ingredients = ingredients.values(
+                'ingredient__name', 'ingredient__measurement_unit', 'amount')
+        ingredients = ingredients.order_by('ingredient__name')
+        ingredients = ingredients.annotate(ingredient_total=Sum('amount'))
         ingredients_to_buy = 'Список покупок: \n'
         for ingredient in ingredients:
             ingredients_to_buy += (
-                f'{ingredient["ingredient"]} '
-                f'({ingredient["measurement_unit"]}) - '
+                f'{ingredient["ingredient__name"]} '
+                f'({ingredient["ingredient__measurement_unit"]}) - '
                 f'{ingredient["amount"]} \n'
             )
         response = HttpResponse(

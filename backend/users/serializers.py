@@ -2,6 +2,8 @@ import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
+from recipes.models import Recipe
+
 from .models import Follow, User
 
 
@@ -30,6 +32,11 @@ class CustomUsersSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='author.id')
+    username = serializers.ReadOnlyField(source='author.username')
+    email = serializers.ReadOnlyField(source='author.email')
+    first_name = serializers.ReadOnlyField(source='author.first_name')
+    last_name = serializers.ReadOnlyField(source='author.last_name')
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -46,26 +53,22 @@ class FollowSerializer(serializers.ModelSerializer):
             'recipes',
             'recipes_count'
         )
-        extra_kwargs = {"password": {'write_only': True}}
-        lookup_field = 'username'
 
-        def get_is_subscribed(self, obj):
-            user = self.context.get('request').user.id
-            return obj.author.filter(
-                user=user).exists()
+    def get_is_subscribed(self, obj):
+        return Follow.objects.filter(user=obj.user, author=obj.author).exists()
 
-        def get_recipes(self, obj):
-            from api.serializers import RecipeShortSerializer
-            recipes = obj.recipes.only(
-                'id',
-                'name',
-                'image',
-                'cooking_time'
-            )
-            return RecipeShortSerializer(recipes, many=True).data
+    def get_recipes(self, obj):
+        from api.serializers import RecipeShortSerializer
+        request = self.context.get('request')
+        recipes_limit = request.query_params.get('recipes_limit')
+        queryset = Recipe.objects.filter(author=obj.author).order_by(
+            '-pub_date')
+        if recipes_limit:
+            queryset = queryset[:int(recipes_limit)]
+        return RecipeShortSerializer(queryset, many=True).data
 
-        def get_recipes_count(self, obj):
-            return obj.recipes.count()
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.author).count()
 
 
 class SetPasswordSerializer(serializers.Serializer):
