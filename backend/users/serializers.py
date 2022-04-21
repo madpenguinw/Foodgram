@@ -2,7 +2,6 @@ import django.contrib.auth.password_validation as validators
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
-
 from .models import Follow, User
 
 

@@ -36,12 +36,12 @@ urlpatterns = (
           set_password,
           name='set_password'),
     path(
-        'api/auth/token/login/',
+        'auth/token/login/',
         views.TokenCreateView.as_view(),
         name='login'
     ),
     path(
-        'api/auth/token/logout/',
+        'auth/token/logout/',
         views.TokenDestroyView.as_view(),
         name='logout'
     ),
