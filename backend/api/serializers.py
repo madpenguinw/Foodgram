@@ -4,6 +4,7 @@ from rest_framework import serializers
 from recipes.models import (Favorite, Ingredient, IngredientsAmount, Recipe,
                             ShoppingCart, Tag)
 from users.serializers import CustomUsersSerializer
+from users.models import User, Follow
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -82,14 +83,20 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         ingredients = data['ingredients']
+        if not ingredients:
+            raise serializers.ValidationError(
+                'Добавьте ингридиент')
         unique_set = set()
         for ingredient_data in ingredients:
             current_ingredient = ingredient_data['id']
-            print(current_ingredient)
             if current_ingredient in unique_set:
                 raise serializers.ValidationError(
                     'Этот ингредиент уже в списке')
             unique_set.add(current_ingredient)
+            current_amount = ingredient_data['amount']
+            if int(current_amount) < 0:
+                raise serializers.ValidationError(
+                    'Количество ингредиентов не может быть отрицательным')
         return data
 
     def create_ingredients_amount(self, obj, ingredients):
@@ -112,7 +119,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def update(self, obj, validated_data):
         if 'ingredients' in validated_data:
             ingredients = validated_data.pop('ingredients')
-            obj.ingredients.clear()
             self.create_ingredients_amount(ingredients, obj)
         if 'tags' in validated_data:
             obj.tags.set(validated_data.pop('tags'))
@@ -170,3 +176,43 @@ class RecipeShortSerializer(serializers.ModelSerializer):
             'image',
             'cooking_time'
         )
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='author.id')
+    username = serializers.ReadOnlyField(source='author.username')
+    email = serializers.ReadOnlyField(source='author.email')
+    first_name = serializers.ReadOnlyField(source='author.first_name')
+    last_name = serializers.ReadOnlyField(source='author.last_name')
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
+    def get_is_subscribed(self, obj):
+        return Follow.objects.filter(user=obj.user, author=obj.author).exists()
+
+    def get_recipes(self, obj):
+        from api.serializers import RecipeShortSerializer
+        request = self.context.get('request')
+        recipes_limit = request.query_params.get('recipes_limit')
+        queryset = Recipe.objects.filter(author=obj.author).order_by(
+            '-pub_date')
+        if recipes_limit:
+            queryset = queryset[:int(recipes_limit)]
+        return RecipeShortSerializer(queryset, many=True).data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.author).count()

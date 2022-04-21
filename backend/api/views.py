@@ -10,7 +10,6 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from recipes.models import (Favorite, Ingredient, IngredientsAmount, Recipe,
                             ShoppingCart, Tag)
 from users.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
-
 from .pagination import PagePagination
 from .serializers import (IngredientsSerializer, RecipeCreateSerializer,
                           RecipeGetSerializer, RecipeShortSerializer,
@@ -49,33 +48,28 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['POST', 'DELETE'],
-            permission_classes=[IsAuthenticated])
-    def favorite(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
+    def data_for_funcs(self, request, obj):
+        recipe_pk = int(self.kwargs['pk'])
+        recipe = get_object_or_404(Recipe, pk=recipe_pk)
         if request.method == 'POST':
             serializer = RecipeShortSerializer(recipe)
-            Favorite.objects.create(user=self.request.user, recipe=recipe)
+            obj.objects.create(user=self.request.user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            Favorite.objects.get(
+            obj.objects.get_object_or_404(
                 user=self.request.user, recipe=recipe
                 ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['POST', 'DELETE'],
             permission_classes=[IsAuthenticated])
+    def favorite(self, request, pk=None):
+        return self.data_for_funcs(request, Favorite)
+
+    @action(detail=True, methods=['POST', 'DELETE'],
+            permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if request.method == 'POST':
-            serializer = RecipeShortSerializer(recipe)
-            ShoppingCart.objects.create(user=self.request.user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        elif request.method == 'DELETE':
-            ShoppingCart.objects.get(
-                user=self.request.user, recipe=recipe
-                ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.data_for_funcs(request, ShoppingCart)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
