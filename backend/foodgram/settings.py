@@ -9,6 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.getenv('SECRET_KEY', default='df5(dqyv#d%x(q_t6zuj&4^tyemi$t7jb+s-m(9@lws55)+^6o')
 
 DEBUG = False
+# for commit
 
 ALLOWED_HOSTS = [
     '51.250.31.172',
