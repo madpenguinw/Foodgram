@@ -11,8 +11,10 @@ SECRET_KEY = os.getenv('SECRET_KEY', default='df5(dqyv#d%x(q_t6zuj&4^tyemi$t7jb+
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    '51.250.31.172',
     'localhost',
     '127.0.0.1',
+    'penguinwbackend.hopto.org',
     '*',
 ]
 
