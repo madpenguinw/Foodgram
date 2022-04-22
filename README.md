@@ -7,6 +7,18 @@ ___
 ### Технологии
 Python 3.7, Django 2.2, DRF, Docker, Docker-compose, Djoser, NGINX, PostgreSQL, Gunicorn
 
+### Суперпользователь
+```
+email mihlastik@gmail.com
+password Sokolov
+```
+
+### Пользователь
+```
+email kmikhailsokolovl@gmail.com
+password Thisispassword
+```
+
 ### Шаблон наполнения env-файла
 ```
 DB_ENGINE=django.db.backends.postgresql

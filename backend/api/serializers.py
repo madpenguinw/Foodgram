@@ -94,9 +94,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                     'Этот ингредиент уже в списке')
             unique_set.add(current_ingredient)
             current_amount = ingredient_data['amount']
-            if int(current_amount) < 0:
+            if int(current_amount) <= 0:
                 raise serializers.ValidationError(
-                    'Количество ингредиентов не может быть отрицательным')
+                    'Количество ингредиентов должно быть положительным')
         return data
 
     def create_ingredients_amount(self, obj, ingredients):
