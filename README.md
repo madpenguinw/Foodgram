@@ -15,7 +15,7 @@ password Sokolov
 
 ### Пользователь
 ```
-email kmikhailsokolovl@gmail.com
+email lmikhailsokolovl@gmail.com
 password Thisispassword
 ```
 
