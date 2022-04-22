@@ -1,10 +1,9 @@
-![workflow status badge](https://github.com/madpenguinw/
-foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg?branch=master&event=push)
+![workflow status badge](https://github.com/madpenguinw/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg?branch=master&event=push)
 # Foodgram
 ___
 Проект доступен по адресу http://51.250.31.172/recipes
 ___
-Приложение «Продуктовый помощник»: сайт, на котором пользователи могут публиковать рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Сервис «Список покупок» позволяет пользователям создавать список продуктов, которые нужно купить для приготовления выбранных блюд, и скачивать его перед походом в магазин.
+Приложение «Продуктовый помощник»: сайт, на котором пользователи могут публиковать рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Сервис «Список покупок» позволяет пользователям создавать список продуктов, которые нужно купить для приготовления выбранных блюд, и скачать его перед походом в магазин.
 ___
 ### Технологии
 Python 3.7, Django 2.2, DRF, Docker, Docker-compose, Djoser, NGINX, PostgreSQL, Gunicorn
