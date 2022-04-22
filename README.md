@@ -1,3 +1,5 @@
+![workflow status badge](https://github.com/madpenguinw/
+foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg?branch=master&event=push)
 # Foodgram
 ___
 Проект доступен по адресу http://51.250.31.172/recipes
