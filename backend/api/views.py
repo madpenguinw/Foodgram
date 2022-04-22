@@ -1,7 +1,7 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,6 +10,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from recipes.models import (Favorite, Ingredient, IngredientsAmount, Recipe,
                             ShoppingCart, Tag)
 from users.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
+from .filters import IngredientFilter, RecipeFilter
 from .pagination import PagePagination
 from .serializers import (IngredientsSerializer, RecipeCreateSerializer,
                           RecipeGetSerializer, RecipeShortSerializer,
@@ -17,28 +18,25 @@ from .serializers import (IngredientsSerializer, RecipeCreateSerializer,
 
 
 class TagsViewSet(ReadOnlyModelViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class IngredientsViewSet(ReadOnlyModelViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
     queryset = Ingredient.objects.all()
     serializer_class = IngredientsSerializer
-    filter_backends = (filters.SearchFilter,)
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (IngredientFilter,)
     search_fields = ('^name',)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
+    serializer_class = RecipeGetSerializer
     permission_classes = [IsOwnerOrReadOnly]
     pagination_class = PagePagination
-    filter_backends = (filters.SearchFilter,)
-    filterset_fields = (
-        'author',
-        'tags',
-    )
+    filter_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -56,10 +54,15 @@ class RecipesViewSet(viewsets.ModelViewSet):
             obj.objects.create(user=self.request.user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            obj.objects.get_object_or_404(
-                user=self.request.user, recipe=recipe
-                ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            if obj.objects.filter(
+                    user=self.request.user, recipe=recipe).exists():
+                obj.objects.get(
+                    user=self.request.user, recipe=recipe
+                    ).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'errors': 'Нет в списке'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['POST', 'DELETE'],
             permission_classes=[IsAuthenticated])

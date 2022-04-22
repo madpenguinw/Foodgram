@@ -48,7 +48,7 @@ class AddIngredientRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IngredientsAmount
-        fields = ("id", "amount")
+        fields = ('id', 'amount')
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -101,7 +101,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def create_ingredients_amount(self, obj, ingredients):
         for ingredient in ingredients:
-            IngredientsAmount.objects.create(
+            IngredientsAmount.objects.get_or_create(
                 recipe=obj,
                 ingredient=ingredient['id'],
                 amount=ingredient['amount']
@@ -119,7 +119,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def update(self, obj, validated_data):
         if 'ingredients' in validated_data:
             ingredients = validated_data.pop('ingredients')
-            self.create_ingredients_amount(ingredients, obj)
+            obj.ingredients.clear()
+            self.create_ingredients_amount(obj, ingredients)
         if 'tags' in validated_data:
             obj.tags.set(validated_data.pop('tags'))
         return super().update(obj, validated_data)
