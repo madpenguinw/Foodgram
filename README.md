@@ -93,6 +93,9 @@ pip install -r requirements.txt
 ```
 deactivate
 ```
+
+---
+
 ### Автор
 
 Соколов Михаил
